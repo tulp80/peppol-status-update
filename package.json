@@ -1,0 +1,14 @@
+{
+  "name": "peppol-status-checker",
+  "version": "1.0.0",
+  "description": "Checks the status of the latest outbound Peppol document",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^16.4.5"
+  }
+}
