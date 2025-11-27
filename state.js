@@ -390,14 +390,9 @@ class InvoiceReportGenerator {
     
     if (needsAcknowledge.length > 0) {
       Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
-      await this.sendAcknowledgedStatuses(needsAcknowledge);
-      hasActions = true;
-
-      Logger.blank();
-      Logger.info(
-        `Wachten ${CONFIG.settings.acknowledgeWaitTime / 1000} seconden na acknowledged...`
-      );
-      await this.countdown(CONFIG.settings.acknowledgeWaitTime);
+      const successCount = await this.sendAcknowledgedStatuses(needsAcknowledge);
+      await this.handleWaitTime(successCount, CONFIG.settings.acknowledgeWaitTime, 'acknowledged');
+      if (successCount > 0) hasActions = true;
     } else {
       Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
       Logger.info('Alle documenten hebben al acknowledged of final status. Overslaan.');
@@ -410,14 +405,9 @@ class InvoiceReportGenerator {
     const needsFinal = freshAnalysis.filter((a) => a.needsFinalStatus);
 
     if (needsFinal.length > 0) {
-      await this.sendFinalStatuses(needsFinal);
-      hasActions = true;
-
-      Logger.blank();
-      Logger.info(
-        `Wachten ${CONFIG.settings.finalStatusWaitTime / 1000} seconden na final status...`
-      );
-      await this.countdown(CONFIG.settings.finalStatusWaitTime);
+      const successCount = await this.sendFinalStatuses(needsFinal);
+      await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
+      if (successCount > 0) hasActions = true;
     } else {
       Logger.info('Alle documenten hebben al een final status. Overslaan.');
     }
@@ -459,11 +449,23 @@ class InvoiceReportGenerator {
 
     for (const match of matches) {
       const analysis = await this.statusManager.analyzeDocument(match.inbound.id);
+      
+      const outboundHasNoBusinessState = !this.hasOutboundBusinessState(match);
+      const needsAcknowledge = outboundHasNoBusinessState && !analysis.hasAcknowledged
+        ? true
+        : analysis.needsAcknowledge;
+      const needsFinalStatus = outboundHasNoBusinessState && analysis.hasAcknowledged
+        ? true
+        : analysis.needsFinalStatus;
+      
       results.push({
         documentId: match.inbound.id,
         transmissionId: match.transmissionId,
         match,
         ...analysis,
+        outboundHasNoBusinessState,
+        needsAcknowledge,
+        needsFinalStatus,
       });
     }
 
@@ -476,60 +478,52 @@ class InvoiceReportGenerator {
 
     for (const item of analysis) {
       const status = item.existingCodes.length > 0 ? item.existingCodes.join(', ') : 'geen';
+      const outboundBusinessState = item.match.outbound.attributes.businessStatus || '-';
       let action = '';
 
-      if (item.isComplete) {
-        action = '→ Compleet (geen actie)';
-      } else if (item.needsAcknowledge) {
-        action = '→ Needs: acknowledged + final';
+      if (item.needsAcknowledge) {
+        if (item.outboundHasNoBusinessState) {
+          action = '→ Needs: acknowledged (outbound heeft geen business state)';
+        } else {
+          action = '→ Needs: acknowledged + final';
+        }
       } else if (item.needsFinalStatus) {
-        action = '→ Needs: final status';
+        if (item.outboundHasNoBusinessState) {
+          action = '→ Needs: final status (outbound heeft geen business state)';
+        } else {
+          action = '→ Needs: final status';
+        }
+      } else if (item.isComplete) {
+        if (item.outboundHasNoBusinessState) {
+          action = '→ Compleet maar outbound heeft geen business state (final status versturen)';
+        } else {
+          action = '→ Compleet (geen actie)';
+        }
       }
 
       console.log(`  ${item.documentId}`);
-      console.log(`    Status: [${status}] ${action}`);
+      console.log(`    Inbound Status: [${status}]`);
+      console.log(`    Outbound Business State: ${outboundBusinessState}`);
+      console.log(`    ${action}`);
     }
 
     Logger.separator();
   }
 
-  async sendAcknowledgedStatuses(documents) {
-    console.log('Acknowledged versturen:');
+  async sendStatuses(documents, phase, getStatusCode, getLabel) {
+    console.log(getLabel());
     Logger.separator();
+
+    let successCount = 0;
 
     for (const doc of documents) {
-      const result = await this.statusManager.sendStatus(
-        doc.documentId,
-        CONFIG.businessStatus.codes.ACKNOWLEDGED
-      );
-
-      this.storeResult(doc.documentId, 'acknowledged', result);
-
-      if (result.success) {
-        console.log(
-          `  ✅ ${doc.documentId} → acknowledged (technical: ${result.technicalStatus})`
-        );
-      } else {
-        console.log(`  ❌ ${doc.documentId} → FOUT: ${result.error}`);
-      }
-    }
-
-    Logger.separator();
-  }
-
-  async sendFinalStatuses(documents) {
-    console.log('Final statuses versturen (random accepted/rejected):');
-    Logger.separator();
-
-    for (const doc of documents) {
-      const statusCode = this.statusManager.getRandomFinalStatus();
+      const statusCode = getStatusCode();
       const result = await this.statusManager.sendStatus(doc.documentId, statusCode);
-
-      this.storeResult(doc.documentId, 'final', result);
-
-      const emoji = statusCode === 'accepted' ? '👍' : '👎';
+      this.storeResult(doc.documentId, phase, result);
 
       if (result.success) {
+        successCount++;
+        const emoji = statusCode === 'accepted' ? '👍' : statusCode === 'rejected' ? '👎' : '✅';
         console.log(
           `  ${emoji} ${doc.documentId} → ${statusCode} (technical: ${result.technicalStatus})`
         );
@@ -539,6 +533,25 @@ class InvoiceReportGenerator {
     }
 
     Logger.separator();
+    return successCount;
+  }
+
+  async sendAcknowledgedStatuses(documents) {
+    return this.sendStatuses(
+      documents,
+      'acknowledged',
+      () => CONFIG.businessStatus.codes.ACKNOWLEDGED,
+      () => 'Acknowledged versturen:'
+    );
+  }
+
+  async sendFinalStatuses(documents) {
+    return this.sendStatuses(
+      documents,
+      'final',
+      () => this.statusManager.getRandomFinalStatus(),
+      () => 'Final statuses versturen (random accepted/rejected):'
+    );
   }
 
   storeResult(documentId, phase, result) {
@@ -548,16 +561,24 @@ class InvoiceReportGenerator {
     this.processResults.get(documentId)[phase] = result;
   }
 
-  async countdown(totalMs) {
-    const intervalMs = 5000;
-    let remaining = totalMs;
+  async handleWaitTime(successCount, waitTimeMs, label) {
+    if (successCount > 0) {
+      Logger.blank();
+      Logger.info(`Wachten ${waitTimeMs / 1000} seconden na ${label}...`);
+      await this.countdown(waitTimeMs);
+    } else {
+      Logger.blank();
+      Logger.info(`Geen ${label} succesvol verstuurd. Wachttijd overgeslagen.`);
+    }
+  }
 
+  async countdown(totalMs, intervalMs = 5000) {
+    let remaining = totalMs;
     while (remaining > 0) {
       process.stdout.write(`\r   ⏳ Nog ${remaining / 1000} seconden...   `);
       await sleep(intervalMs);
       remaining -= intervalMs;
     }
-
     process.stdout.write('\r   ✅ Wachttijd voltooid.           \n');
   }
 
@@ -587,11 +608,19 @@ class InvoiceReportGenerator {
       }));
   }
 
+  hasOutboundBusinessState(match) {
+    const status = match.outbound.attributes.businessStatus;
+    return status && status !== '-';
+  }
+
   async printFinalResults(matches) {
+    // Sorteer matches op factuurnummer (hoog naar laag)
+    const sortedMatches = await this.sortMatchesByInvoiceNumber(matches);
+
     // Haal verse outbound documenten op na wachttijd
     const freshOutboundMap = await this.buildOutboundMap();
 
-    for (const match of matches) {
+    for (const match of sortedMatches) {
       const freshOutbound = freshOutboundMap.get(match.transmissionId) || match.outbound;
       const processResult = this.processResults.get(match.inbound.id) || {};
 
@@ -607,21 +636,20 @@ class InvoiceReportGenerator {
     }
   }
 
-  async printMatch({ inbound, outbound, transmissionId }, processResult) {
-    const [xmlDetails, inboundStatuses] = await Promise.all([
+  async printMatch({ inbound, outbound, transmissionId }, processResult, inboundStatus = null) {
+    const [xmlDetails, statuses] = await Promise.all([
       this.fetchXmlDetailsSafe(inbound.id),
-      this.fetchBusinessStatusSafe(inbound.id),
+      inboundStatus ? Promise.resolve([]) : this.fetchBusinessStatusSafe(inbound.id),
     ]);
 
-    const inboundStatus = StatusResolver.getLatestStatus(inboundStatuses);
-
+    const status = inboundStatus || StatusResolver.getLatestStatus(statuses);
     const wasSkipped = !processResult.acknowledged && !processResult.final;
     const skipIndicator = wasSkipped ? ' *' : '';
 
     this.printInvoiceHeader(xmlDetails, skipIndicator);
     this.printOutboundSection(outbound);
     this.printTransmissionSection(transmissionId);
-    this.printInboundSection(inbound, inboundStatus);
+    this.printInboundSection(inbound, status);
     this.printProcessSummary(processResult);
 
     Logger.separator();
@@ -629,27 +657,18 @@ class InvoiceReportGenerator {
   }
 
   async printMatchWithFreshStatus({ inbound, outbound, transmissionId }, processResult, inboundStatus) {
-    const xmlDetails = await this.fetchXmlDetailsSafe(inbound.id);
-
-    const wasSkipped = !processResult.acknowledged && !processResult.final;
-    const skipIndicator = wasSkipped ? ' *' : '';
-
-    this.printInvoiceHeader(xmlDetails, skipIndicator);
-    this.printOutboundSection(outbound);
-    this.printTransmissionSection(transmissionId);
-    this.printInboundSection(inbound, inboundStatus);
-    this.printProcessSummary(processResult);
-
-    Logger.separator();
-    Logger.blank();
+    return this.printMatch({ inbound, outbound, transmissionId }, processResult, inboundStatus);
   }
 
   async saveReportToFile(matches) {
     this.fileWriter.init();
 
+    // Sorteer matches op factuurnummer (hoog naar laag)
+    const sortedMatches = await this.sortMatchesByInvoiceNumber(matches);
+
     const freshOutboundMap = await this.buildOutboundMap();
 
-    for (const match of matches) {
+    for (const match of sortedMatches) {
       const freshOutbound = freshOutboundMap.get(match.transmissionId) || match.outbound;
 
       const [xmlDetails, inboundStatuses] = await Promise.all([
@@ -712,6 +731,25 @@ class InvoiceReportGenerator {
     }
   }
 
+  async sortMatchesByInvoiceNumber(matches) {
+    const matchesWithNumbers = await Promise.all(
+      matches.map(async (match) => ({
+        match,
+        invoiceNumber: (await this.fetchXmlDetailsSafe(match.inbound.id)).invoiceNumber,
+      }))
+    );
+
+    matchesWithNumbers.sort((a, b) => {
+      const numA = parseInt(a.invoiceNumber, 10);
+      const numB = parseInt(b.invoiceNumber, 10);
+      return !isNaN(numA) && !isNaN(numB)
+        ? numA - numB
+        : a.invoiceNumber.localeCompare(b.invoiceNumber);
+    });
+
+    return matchesWithNumbers.map((item) => item.match);
+  }
+
   async fetchBusinessStatusSafe(docId) {
     try {
       return await this.api.fetchInboundBusinessStatuses(docId);
@@ -758,25 +796,37 @@ class InvoiceReportGenerator {
 
   printProcessSummary(processResult) {
     const actions = [];
+    const errors = [];
 
     if (processResult.acknowledged) {
       const ack = processResult.acknowledged;
-      actions.push(ack.success ? `acknowledged ✅` : `acknowledged ❌`);
+      if (ack.success) {
+        actions.push(`acknowledged ✅`);
+      } else {
+        actions.push(`acknowledged ❌`);
+        if (ack.error) errors.push(`acknowledged: ${ack.error}`);
+      }
     }
 
     if (processResult.final) {
       const fin = processResult.final;
       const emoji = fin.statusCode === 'accepted' ? '👍' : '👎';
-      actions.push(fin.success ? `${fin.statusCode} ${emoji}` : `${fin.statusCode} ❌`);
+      if (fin.success) {
+        actions.push(`${fin.statusCode} ${emoji}`);
+      } else {
+        actions.push(`${fin.statusCode} ❌`);
+        if (fin.error) errors.push(`${fin.statusCode}: ${fin.error}`);
+      }
     }
 
     if (actions.length > 0) {
       Logger.blank();
       console.log(`Acties deze run              : ${actions.join(' → ')}`);
-    } else {
-      Logger.blank();
-      console.log(`Acties deze run              : * Geen (had al final status)`);
+      if (errors.length > 0) {
+        errors.forEach((error) => console.log(`  Foutmelding                  : ${error}`));
+      }
     }
+    // Als er geen acties zijn, wordt de regel weggelaten
   }
 }
 
