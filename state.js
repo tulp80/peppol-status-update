@@ -4,176 +4,802 @@ import https from 'https';
 import fs from 'fs';
 import path from 'path';
 
-// --- CONFIGURATIE ---
-const CONFIG = {
-  baseUrl: process.env.BASE_URL,
-  tokenUrl: process.env.TOKEN_URL,
-  clientId: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET,
-  pfxFile: process.env.PFX_FILE || 'client_fullchain_with_password.pfx',
-  pfxPass: process.env.SSL_PASSPHRASE,
-  
-  // Pas deze ID's aan naar jouw testdata
-  outboundSupplierId: "ef111c85-4315-4cde-bed9-efd29f25e19c", 
-  inboundSupplierId:  "330a0188-1cda-4596-9715-23ddb4c33771"
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const CONFIG = Object.freeze({
+  api: {
+    baseUrl: process.env.BASE_URL,
+    tokenUrl: process.env.TOKEN_URL,
+  },
+  auth: {
+    clientId: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+  },
+  ssl: {
+    pfxFile: process.env.PFX_FILE || 'client_fullchain_with_password.pfx',
+    passphrase: process.env.SSL_PASSPHRASE,
+  },
+  suppliers: {
+    outbound: {
+      id: 'ef111c85-4315-4cde-bed9-efd29f25e19c',
+      name: 'ABC Test Peppol B.V. (Administratie Tenant: 035058)',
+    },
+    inbound: {
+      id: '330a0188-1cda-4596-9715-23ddb4c33771',
+      name: 'XYZ Test Peppol B.V. (Administratie Tenant: 034946)',
+    },
+  },
+  settings: {
+    pageSize: 100,
+    lookbackDays: 6,
+    timeout: 30000,
+    acknowledgeWaitTime: 60000,
+    finalStatusWaitTime: 30000,
+    outputDir: './reports',
+  },
+  businessStatus: {
+    codes: {
+      ACKNOWLEDGED: 'acknowledged',
+      ACCEPTED: 'accepted',
+      REJECTED: 'rejected',
+    },
+    get allStatuses() {
+      return Object.values(this.codes);
+    },
+    get finalStatuses() {
+      return [this.codes.ACCEPTED, this.codes.REJECTED];
+    },
+  },
+});
+
+// ============================================================================
+// LOGGER
+// ============================================================================
+
+const Logger = {
+  info: (msg) => console.log(`ℹ️  ${msg}`),
+  success: (msg) => console.log(`✅ ${msg}`),
+  error: (msg) => console.error(`❌ ${msg}`),
+  warning: (msg) => console.log(`⚠️  ${msg}`),
+  separator: () => console.log('-'.repeat(80)),
+  blank: () => console.log(''),
+  header: (msg) => {
+    Logger.blank();
+    console.log(`${'='.repeat(20)} ${msg} ${'='.repeat(20)}`);
+    Logger.blank();
+  },
 };
 
-// --- HTTP CLIENT SETUP ---
-if (!fs.existsSync(CONFIG.pfxFile)) {
-    console.error(`❌ Certificaat bestand niet gevonden: ${CONFIG.pfxFile}`);
-    process.exit(1);
-}
+// ============================================================================
+// UTILITIES
+// ============================================================================
 
-const httpsAgent = new https.Agent({
-  pfx: fs.readFileSync(path.resolve(CONFIG.pfxFile)),
-  passphrase: CONFIG.pfxPass,
-  rejectUnauthorized: false 
-});
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const apiClient = axios.create({
-  httpsAgent: httpsAgent,
-  timeout: 30000
-});
+const randomChoice = (options) => options[Math.floor(Math.random() * options.length)];
 
-// --- HELPER: NETTE ERROR LOGGING ---
-function handleAxiosError(error, context) {
-    if (error.response) {
-        // De server heeft geantwoord met een foutcode (4xx, 5xx)
-        console.error(`❌ Fout bij ${context} (Status: ${error.response.status})`);
-        // We loggen alleen de data payload, niet het hele request object
-        console.error("   Details:", JSON.stringify(error.response.data, null, 2));
-    } else if (error.request) {
-        // Geen antwoord ontvangen
-        console.error(`❌ Fout bij ${context}: Geen antwoord van server ontvangen.`);
-    } else {
-        // Configuratiefout
-        console.error(`❌ Fout bij ${context}: ${error.message}`);
+const formatTimestamp = (date = new Date()) => {
+  return date.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+};
+
+// ============================================================================
+// FILE WRITER
+// ============================================================================
+
+class ReportFileWriter {
+  constructor(outputDir) {
+    this.outputDir = outputDir;
+    this.lines = [];
+    this.filename = null;
+  }
+
+  init() {
+    if (!fs.existsSync(this.outputDir)) {
+      fs.mkdirSync(this.outputDir, { recursive: true });
     }
-}
+    this.filename = path.join(this.outputDir, `${formatTimestamp()}.txt`);
+    this.lines = [];
+  }
 
-// --- FUNCTIES ---
+  addLine(text = '') {
+    this.lines.push(text);
+  }
 
-async function getAccessToken() {
-  const authHeader = Buffer.from(`${CONFIG.clientId}:${CONFIG.clientSecret}`).toString('base64');
-  const params = new URLSearchParams();
-  params.append('grant_type', 'client_credentials');
+  addSeparator() {
+    this.lines.push('-'.repeat(80));
+  }
 
-  try {
-      const response = await apiClient.post(CONFIG.tokenUrl, params, {
-        headers: { 'Authorization': `Basic ${authHeader}`, 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-      return response.data.access_token;
-  } catch (error) {
-      handleAxiosError(error, "Authenticatie");
-      process.exit(1);
+  addBlank() {
+    this.lines.push('');
+  }
+
+  save() {
+    const content = this.lines.join('\n');
+    fs.writeFileSync(this.filename, content, 'utf8');
+    return this.filename;
   }
 }
 
-async function getSupplierName(token, supplierId) {
-    if (supplierId === CONFIG.outboundSupplierId) return "ABC Test Peppol B.V.";
-    if (supplierId === CONFIG.inboundSupplierId) return "XYZ Test Peppol B.V.";
-    if (!supplierId) return "Onbekend ID";
-    
-    try {
-        const response = await apiClient.get(`${CONFIG.baseUrl}/suppliers/${supplierId}`, {
-            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.api+json" }
-        });
-        const names = response.data.data.attributes.names;
-        return names && names.length > 0 ? names[0].value : "Naamloos";
-    } catch (error) { return "Niet gevonden"; }
+// ============================================================================
+// HTTP CLIENT
+// ============================================================================
+
+function createHttpClient() {
+  const { pfxFile, passphrase } = CONFIG.ssl;
+
+  if (!fs.existsSync(pfxFile)) {
+    throw new Error(`SSL certificate not found: ${pfxFile}`);
+  }
+
+  const httpsAgent = new https.Agent({
+    pfx: fs.readFileSync(path.resolve(pfxFile)),
+    passphrase,
+    rejectUnauthorized: false,
+  });
+
+  return axios.create({
+    httpsAgent,
+    timeout: CONFIG.settings.timeout,
+  });
 }
 
-async function getInboundXmlData(token, documentId) {
-    try {
-        const response = await apiClient.get(`${CONFIG.baseUrl}/peppol/inbound-documents/${documentId}`, {
-            headers: { "Authorization": `Bearer ${token}`, "Accept": "application/xml" },
-            responseType: 'text'
-        });
-        const xml = response.data;
-        const idMatch = xml.match(/<cbc:ID>([^<]+)<\/cbc:ID>/);
-        const noteMatch = xml.match(/<cbc:Note>([^<]+)<\/cbc:Note>/);
-        return { 
-            invoiceNumber: idMatch ? idMatch[1] : "Niet gevonden", 
-            description: noteMatch ? noteMatch[1] : "-" 
-        };
-    } catch (error) {
-        return { invoiceNumber: "Fout", description: "Fout" };
+// ============================================================================
+// API SERVICE
+// ============================================================================
+
+class PeppolApiService {
+  constructor(httpClient) {
+    this.client = httpClient;
+    this.token = null;
+  }
+
+  async authenticate() {
+    const { clientId, clientSecret } = CONFIG.auth;
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    const response = await this.client.post(
+      CONFIG.api.tokenUrl,
+      new URLSearchParams({ grant_type: 'client_credentials' }),
+      {
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    this.token = response.data.access_token;
+    return this.token;
+  }
+
+  get authHeaders() {
+    return {
+      Authorization: `Bearer ${this.token}`,
+      Accept: 'application/vnd.api+json',
+    };
+  }
+
+  get jsonApiHeaders() {
+    return {
+      ...this.authHeaders,
+      'Content-Type': 'application/vnd.api+json',
+    };
+  }
+
+  async fetchOutboundDocuments(supplierId, fromDate) {
+    const url = `${CONFIG.api.baseUrl}/peppol/documents`;
+    const params = {
+      supplierId,
+      fromStatusChanged: fromDate.toISOString(),
+      'page[size]': CONFIG.settings.pageSize,
+    };
+
+    const response = await this.client.get(url, {
+      headers: this.authHeaders,
+      params,
+    });
+
+    return response.data.data || [];
+  }
+
+  async fetchInboundDocuments(supplierId) {
+    const url = `${CONFIG.api.baseUrl}/peppol/inbound-documents`;
+    const params = {
+      supplierId,
+      'page[size]': CONFIG.settings.pageSize,
+    };
+
+    const response = await this.client.get(url, {
+      headers: this.authHeaders,
+      params,
+    });
+
+    return response.data.data || [];
+  }
+
+  async fetchDocumentXml(documentId) {
+    const url = `${CONFIG.api.baseUrl}/peppol/inbound-documents/${documentId}`;
+
+    const response = await this.client.get(url, {
+      headers: { ...this.authHeaders, Accept: 'application/xml' },
+      responseType: 'text',
+    });
+
+    return response.data;
+  }
+
+  async fetchInboundBusinessStatuses(documentId) {
+    const url = `${CONFIG.api.baseUrl}/peppol/inbound-documents/${documentId}/business-statuses`;
+
+    const response = await this.client.get(url, {
+      headers: this.authHeaders,
+    });
+
+    return response.data.data || [];
+  }
+
+  async sendBusinessStatus(documentId, statusCode) {
+    const url = `${CONFIG.api.baseUrl}/peppol/inbound-documents/${documentId}/business-statuses`;
+
+    const payload = {
+      data: {
+        type: 'peppolInboundDocumentBusinessStatus',
+        attributes: {
+          code: statusCode,
+        },
+      },
+    };
+
+    const response = await this.client.post(url, payload, {
+      headers: this.jsonApiHeaders,
+    });
+
+    return response.data.data;
+  }
+}
+
+// ============================================================================
+// DATA EXTRACTORS
+// ============================================================================
+
+const XmlParser = {
+  extractField(xml, tagName) {
+    const regex = new RegExp(`<cbc:${tagName}>([^<]+)</cbc:${tagName}>`);
+    const match = xml.match(regex);
+    return match ? match[1] : null;
+  },
+
+  parseInvoiceDetails(xml) {
+    return {
+      invoiceNumber: this.extractField(xml, 'ID') || 'Niet gevonden',
+      description: this.extractField(xml, 'Note') || '-',
+    };
+  },
+};
+
+const StatusResolver = {
+  getLatestStatus(statuses) {
+    if (!statuses.length) {
+      return { code: '-', technicalStatus: '-' };
     }
+
+    const sorted = [...statuses].sort(
+      (a, b) => new Date(b.attributes.createdAt) - new Date(a.attributes.createdAt)
+    );
+
+    const latest = sorted[0].attributes;
+    return {
+      code: latest.code || '-',
+      technicalStatus: latest.technicalStatus || '-',
+    };
+  },
+
+  hasStatus(statuses, statusCode) {
+    return statuses.some((s) => s.attributes.code === statusCode);
+  },
+
+  hasAnyStatus(statuses, statusCodes) {
+    return statuses.some((s) => statusCodes.includes(s.attributes.code));
+  },
+
+  getExistingStatusCodes(statuses) {
+    return statuses.map((s) => s.attributes.code);
+  },
+};
+
+// ============================================================================
+// BUSINESS STATUS MANAGER
+// ============================================================================
+
+class BusinessStatusManager {
+  constructor(apiService) {
+    this.api = apiService;
+  }
+
+  async analyzeDocument(documentId) {
+    const statuses = await this.api.fetchInboundBusinessStatuses(documentId);
+    const { codes, finalStatuses } = CONFIG.businessStatus;
+
+    const hasAcknowledged = StatusResolver.hasStatus(statuses, codes.ACKNOWLEDGED);
+    const hasFinalStatus = StatusResolver.hasAnyStatus(statuses, finalStatuses);
+    const existingCodes = StatusResolver.getExistingStatusCodes(statuses);
+
+    return {
+      statuses,
+      hasAcknowledged,
+      hasFinalStatus,
+      existingCodes,
+      needsAcknowledge: !hasAcknowledged && !hasFinalStatus,
+      needsFinalStatus: hasAcknowledged && !hasFinalStatus,
+      isComplete: hasFinalStatus,
+    };
+  }
+
+  async sendStatus(documentId, statusCode) {
+    try {
+      const response = await this.api.sendBusinessStatus(documentId, statusCode);
+      return {
+        success: true,
+        statusCode,
+        statusId: response.id,
+        technicalStatus: response.attributes.technicalStatus,
+      };
+    } catch (error) {
+      const errorMessage = error.response?.data?.errors?.[0]?.detail || error.message;
+      return {
+        success: false,
+        statusCode,
+        error: errorMessage,
+      };
+    }
+  }
+
+  getRandomFinalStatus() {
+    const { ACCEPTED, REJECTED } = CONFIG.businessStatus.codes;
+    return randomChoice([ACCEPTED, REJECTED]);
+  }
 }
 
-// --- HOOFD PROGRAMMA ---
+// ============================================================================
+// REPORT GENERATOR
+// ============================================================================
+
+class InvoiceReportGenerator {
+  constructor(apiService) {
+    this.api = apiService;
+    this.statusManager = new BusinessStatusManager(apiService);
+    this.processResults = new Map();
+    this.fileWriter = new ReportFileWriter(CONFIG.settings.outputDir);
+  }
+
+  async generateReport() {
+    // Stap 1: Haal documenten op en vind matches
+    const matches = await this.fetchAndMatchDocuments();
+    if (!matches.length) return;
+
+    // Stap 2: Analyseer huidige statuses
+    Logger.header('STAP 1: ANALYSE');
+    const analysis = await this.analyzeAllDocuments(matches);
+    this.printAnalysis(analysis);
+
+    // Stap 3: Verstuur acknowledged waar nodig
+    const needsAcknowledge = analysis.filter((a) => a.needsAcknowledge);
+    let hasActions = false;
+    
+    if (needsAcknowledge.length > 0) {
+      Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
+      await this.sendAcknowledgedStatuses(needsAcknowledge);
+      hasActions = true;
+
+      Logger.blank();
+      Logger.info(
+        `Wachten ${CONFIG.settings.acknowledgeWaitTime / 1000} seconden na acknowledged...`
+      );
+      await this.countdown(CONFIG.settings.acknowledgeWaitTime);
+    } else {
+      Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
+      Logger.info('Alle documenten hebben al acknowledged of final status. Overslaan.');
+    }
+
+    // Stap 4: Verstuur accepted/rejected waar nodig
+    Logger.header('STAP 3: ACCEPTED/REJECTED VERSTUREN');
+
+    const freshAnalysis = await this.analyzeAllDocuments(matches);
+    const needsFinal = freshAnalysis.filter((a) => a.needsFinalStatus);
+
+    if (needsFinal.length > 0) {
+      await this.sendFinalStatuses(needsFinal);
+      hasActions = true;
+
+      Logger.blank();
+      Logger.info(
+        `Wachten ${CONFIG.settings.finalStatusWaitTime / 1000} seconden na final status...`
+      );
+      await this.countdown(CONFIG.settings.finalStatusWaitTime);
+    } else {
+      Logger.info('Alle documenten hebben al een final status. Overslaan.');
+    }
+
+    // Stap 5: Toon eindresultaten
+    Logger.header('EINDRESULTATEN');
+    await this.printFinalResults(matches);
+
+    // Stap 6: Schrijf naar bestand
+    Logger.header('RAPPORT OPSLAAN');
+    await this.saveReportToFile(matches);
+  }
+
+  async fetchAndMatchDocuments() {
+    Logger.info('Inbound documenten ophalen...');
+    const inboundDocs = await this.api.fetchInboundDocuments(CONFIG.suppliers.inbound.id);
+
+    if (!inboundDocs.length) {
+      Logger.error('Geen inkomende facturen gevonden.');
+      return [];
+    }
+    Logger.success(`${inboundDocs.length} inbound document(en) gevonden.`);
+
+    Logger.info('Outbound documenten ophalen...');
+    const outboundMap = await this.buildOutboundMap();
+    const matches = this.findMatches(inboundDocs, outboundMap);
+
+    if (!matches.length) {
+      Logger.error('Geen matches gevonden.');
+      return [];
+    }
+    Logger.success(`${matches.length} match(es) gevonden.`);
+
+    return matches;
+  }
+
+  async analyzeAllDocuments(matches) {
+    const results = [];
+
+    for (const match of matches) {
+      const analysis = await this.statusManager.analyzeDocument(match.inbound.id);
+      results.push({
+        documentId: match.inbound.id,
+        transmissionId: match.transmissionId,
+        match,
+        ...analysis,
+      });
+    }
+
+    return results;
+  }
+
+  printAnalysis(analysis) {
+    console.log('Huidige status overzicht:');
+    Logger.separator();
+
+    for (const item of analysis) {
+      const status = item.existingCodes.length > 0 ? item.existingCodes.join(', ') : 'geen';
+      let action = '';
+
+      if (item.isComplete) {
+        action = '→ Compleet (geen actie)';
+      } else if (item.needsAcknowledge) {
+        action = '→ Needs: acknowledged + final';
+      } else if (item.needsFinalStatus) {
+        action = '→ Needs: final status';
+      }
+
+      console.log(`  ${item.documentId}`);
+      console.log(`    Status: [${status}] ${action}`);
+    }
+
+    Logger.separator();
+  }
+
+  async sendAcknowledgedStatuses(documents) {
+    console.log('Acknowledged versturen:');
+    Logger.separator();
+
+    for (const doc of documents) {
+      const result = await this.statusManager.sendStatus(
+        doc.documentId,
+        CONFIG.businessStatus.codes.ACKNOWLEDGED
+      );
+
+      this.storeResult(doc.documentId, 'acknowledged', result);
+
+      if (result.success) {
+        console.log(
+          `  ✅ ${doc.documentId} → acknowledged (technical: ${result.technicalStatus})`
+        );
+      } else {
+        console.log(`  ❌ ${doc.documentId} → FOUT: ${result.error}`);
+      }
+    }
+
+    Logger.separator();
+  }
+
+  async sendFinalStatuses(documents) {
+    console.log('Final statuses versturen (random accepted/rejected):');
+    Logger.separator();
+
+    for (const doc of documents) {
+      const statusCode = this.statusManager.getRandomFinalStatus();
+      const result = await this.statusManager.sendStatus(doc.documentId, statusCode);
+
+      this.storeResult(doc.documentId, 'final', result);
+
+      const emoji = statusCode === 'accepted' ? '👍' : '👎';
+
+      if (result.success) {
+        console.log(
+          `  ${emoji} ${doc.documentId} → ${statusCode} (technical: ${result.technicalStatus})`
+        );
+      } else {
+        console.log(`  ❌ ${doc.documentId} → FOUT: ${result.error}`);
+      }
+    }
+
+    Logger.separator();
+  }
+
+  storeResult(documentId, phase, result) {
+    if (!this.processResults.has(documentId)) {
+      this.processResults.set(documentId, {});
+    }
+    this.processResults.get(documentId)[phase] = result;
+  }
+
+  async countdown(totalMs) {
+    const intervalMs = 5000;
+    let remaining = totalMs;
+
+    while (remaining > 0) {
+      process.stdout.write(`\r   ⏳ Nog ${remaining / 1000} seconden...   `);
+      await sleep(intervalMs);
+      remaining -= intervalMs;
+    }
+
+    process.stdout.write('\r   ✅ Wachttijd voltooid.           \n');
+  }
+
+  async buildOutboundMap() {
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - CONFIG.settings.lookbackDays);
+
+    const outboundDocs = await this.api.fetchOutboundDocuments(
+      CONFIG.suppliers.outbound.id,
+      fromDate
+    );
+
+    return new Map(
+      outboundDocs
+        .filter((doc) => doc.attributes.transmissionId)
+        .map((doc) => [doc.attributes.transmissionId, doc])
+    );
+  }
+
+  findMatches(inboundDocs, outboundMap) {
+    return inboundDocs
+      .filter((doc) => outboundMap.has(doc.attributes.transmissionId))
+      .map((inDoc) => ({
+        inbound: inDoc,
+        outbound: outboundMap.get(inDoc.attributes.transmissionId),
+        transmissionId: inDoc.attributes.transmissionId,
+      }));
+  }
+
+  async printFinalResults(matches) {
+    // Haal verse outbound documenten op na wachttijd
+    const freshOutboundMap = await this.buildOutboundMap();
+
+    for (const match of matches) {
+      const freshOutbound = freshOutboundMap.get(match.transmissionId) || match.outbound;
+      const processResult = this.processResults.get(match.inbound.id) || {};
+
+      // Haal verse inbound business statuses op na wachttijd
+      const freshInboundStatuses = await this.fetchBusinessStatusSafe(match.inbound.id);
+      const freshInboundStatus = StatusResolver.getLatestStatus(freshInboundStatuses);
+
+      await this.printMatchWithFreshStatus(
+        { ...match, outbound: freshOutbound },
+        processResult,
+        freshInboundStatus
+      );
+    }
+  }
+
+  async printMatch({ inbound, outbound, transmissionId }, processResult) {
+    const [xmlDetails, inboundStatuses] = await Promise.all([
+      this.fetchXmlDetailsSafe(inbound.id),
+      this.fetchBusinessStatusSafe(inbound.id),
+    ]);
+
+    const inboundStatus = StatusResolver.getLatestStatus(inboundStatuses);
+
+    const wasSkipped = !processResult.acknowledged && !processResult.final;
+    const skipIndicator = wasSkipped ? ' *' : '';
+
+    this.printInvoiceHeader(xmlDetails, skipIndicator);
+    this.printOutboundSection(outbound);
+    this.printTransmissionSection(transmissionId);
+    this.printInboundSection(inbound, inboundStatus);
+    this.printProcessSummary(processResult);
+
+    Logger.separator();
+    Logger.blank();
+  }
+
+  async printMatchWithFreshStatus({ inbound, outbound, transmissionId }, processResult, inboundStatus) {
+    const xmlDetails = await this.fetchXmlDetailsSafe(inbound.id);
+
+    const wasSkipped = !processResult.acknowledged && !processResult.final;
+    const skipIndicator = wasSkipped ? ' *' : '';
+
+    this.printInvoiceHeader(xmlDetails, skipIndicator);
+    this.printOutboundSection(outbound);
+    this.printTransmissionSection(transmissionId);
+    this.printInboundSection(inbound, inboundStatus);
+    this.printProcessSummary(processResult);
+
+    Logger.separator();
+    Logger.blank();
+  }
+
+  async saveReportToFile(matches) {
+    this.fileWriter.init();
+
+    const freshOutboundMap = await this.buildOutboundMap();
+
+    for (const match of matches) {
+      const freshOutbound = freshOutboundMap.get(match.transmissionId) || match.outbound;
+
+      const [xmlDetails, inboundStatuses] = await Promise.all([
+        this.fetchXmlDetailsSafe(match.inbound.id),
+        this.fetchBusinessStatusSafe(match.inbound.id),
+      ]);
+
+      const inboundStatus = StatusResolver.getLatestStatus(inboundStatuses);
+
+      this.writeInvoiceToFile(
+        { ...match, outbound: freshOutbound },
+        xmlDetails,
+        inboundStatus
+      );
+    }
+
+    const filename = this.fileWriter.save();
+    Logger.success(`Rapport opgeslagen: ${filename}`);
+  }
+
+  writeInvoiceToFile({ inbound, outbound, transmissionId }, xmlDetails, inboundStatus) {
+    const fw = this.fileWriter;
+
+    // Invoice header
+    fw.addLine(`Factuurnummer (BIS 3.0)         : ${xmlDetails.invoiceNumber}`);
+    fw.addLine(`Betreft (BIS 3.0)               : ${xmlDetails.description}`);
+    fw.addBlank();
+
+    // Outbound section
+    fw.addLine(`Outbound Supplier name         : ${CONFIG.suppliers.outbound.name}`);
+    fw.addLine(`Outbound Supplier ID           : ${CONFIG.suppliers.outbound.id}`);
+    fw.addLine(`Outbound FactuurID             : ${outbound.id}`);
+    fw.addLine(`Outbound Created DateTime      : ${outbound.attributes.createdAt}`);
+    fw.addLine(`Outbound technical-state       : ${outbound.attributes.technicalStatus || '-'}`);
+    fw.addLine(`Outbound business-state        : ${outbound.attributes.businessStatus || '-'}`);
+    fw.addBlank();
+
+    // Transmission section
+    fw.addLine(`Transmission FactuurID         : ${transmissionId}`);
+    fw.addBlank();
+
+    // Inbound section
+    fw.addLine(`Inbound Supplier name          : ${CONFIG.suppliers.inbound.name}`);
+    fw.addLine(`Inbound Supplier ID            : ${CONFIG.suppliers.inbound.id}`);
+    fw.addLine(`Inbound FactuurID              : ${inbound.id}`);
+    fw.addLine(`Inbound Created DateTime       : ${inbound.attributes.createdAt}`);
+    fw.addLine(`IMR technical-state            : ${inboundStatus.technicalStatus}`);
+    fw.addLine(`IMR business-state             : ${inboundStatus.code}`);
+
+    fw.addSeparator();
+    fw.addBlank();
+  }
+
+  async fetchXmlDetailsSafe(docId) {
+    try {
+      const xml = await this.api.fetchDocumentXml(docId);
+      return XmlParser.parseInvoiceDetails(xml);
+    } catch {
+      return { invoiceNumber: 'Error', description: 'Error' };
+    }
+  }
+
+  async fetchBusinessStatusSafe(docId) {
+    try {
+      return await this.api.fetchInboundBusinessStatuses(docId);
+    } catch {
+      return [];
+    }
+  }
+
+  printInvoiceHeader({ invoiceNumber, description }, skipIndicator = '') {
+    console.log(`Factuurnummer (BIS 3.0)         : ${invoiceNumber}${skipIndicator}`);
+    console.log(`Betreft (BIS 3.0)               : ${description}`);
+    Logger.blank();
+  }
+
+  printOutboundSection(doc) {
+    const { outbound } = CONFIG.suppliers;
+    const { id, attributes } = doc;
+
+    console.log(`Outbound Supplier name         : ${outbound.name}`);
+    console.log(`Outbound Supplier ID           : ${outbound.id}`);
+    console.log(`Outbound FactuurID             : ${id}`);
+    console.log(`Outbound Created DateTime      : ${attributes.createdAt}`);
+    console.log(`Outbound technical-state       : ${attributes.technicalStatus || '-'}`);
+    console.log(`Outbound business-state        : ${attributes.businessStatus || '-'}`);
+    Logger.blank();
+  }
+
+  printTransmissionSection(transmissionId) {
+    console.log(`Transmission FactuurID         : ${transmissionId}`);
+    Logger.blank();
+  }
+
+  printInboundSection(doc, status) {
+    const { inbound } = CONFIG.suppliers;
+    const { id, attributes } = doc;
+
+    console.log(`Inbound Supplier name          : ${inbound.name}`);
+    console.log(`Inbound Supplier ID            : ${inbound.id}`);
+    console.log(`Inbound FactuurID              : ${id}`);
+    console.log(`Inbound Created DateTime       : ${attributes.createdAt}`);
+    console.log(`IMR technical-state            : ${status.technicalStatus}`);
+    console.log(`IMR business-state             : ${status.code}`);
+  }
+
+  printProcessSummary(processResult) {
+    const actions = [];
+
+    if (processResult.acknowledged) {
+      const ack = processResult.acknowledged;
+      actions.push(ack.success ? `acknowledged ✅` : `acknowledged ❌`);
+    }
+
+    if (processResult.final) {
+      const fin = processResult.final;
+      const emoji = fin.statusCode === 'accepted' ? '👍' : '👎';
+      actions.push(fin.success ? `${fin.statusCode} ${emoji}` : `${fin.statusCode} ❌`);
+    }
+
+    if (actions.length > 0) {
+      Logger.blank();
+      console.log(`Acties deze run              : ${actions.join(' → ')}`);
+    } else {
+      Logger.blank();
+      console.log(`Acties deze run              : * Geen (had al final status)`);
+    }
+  }
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
 
 async function main() {
-  console.log("Authenticeren...");
-  const token = await getAccessToken();
-  console.log("✅ Data ophalen... even geduld.\n");
-
-  // 1. OUTBOUND ophalen
-  const fromDate = new Date();
-  // FIX: Maximaal 6 dagen terug om API error te voorkomen
-  fromDate.setDate(fromDate.getDate() - 6); 
-  
-  const outboundUrl = `${CONFIG.baseUrl}/peppol/documents?fromStatusChanged=${fromDate.toISOString()}&supplierId=${CONFIG.outboundSupplierId}&page[size]=50`;
-  
-  let latest10Outbound = [];
   try {
-      const outboundRes = await apiClient.get(outboundUrl, {
-        headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.api+json" }
-      });
-      
-      latest10Outbound = (outboundRes.data.data || [])
-          .sort((a, b) => new Date(b.attributes.createdAt) - new Date(a.attributes.createdAt))
-          .slice(0, 10);
-          
+    Logger.info('Authenticeren...');
+
+    const httpClient = createHttpClient();
+    const apiService = new PeppolApiService(httpClient);
+
+    await apiService.authenticate();
+    Logger.success('Token verkregen.');
+
+    const reportGenerator = new InvoiceReportGenerator(apiService);
+    await reportGenerator.generateReport();
   } catch (error) {
-      handleAxiosError(error, "Ophalen Outbound Documenten");
-      return;
+    Logger.error(`Applicatiefout: ${error.message}`);
+    process.exit(1);
   }
-
-  if (latest10Outbound.length === 0) { console.log("❌ Geen uitgaande facturen gevonden."); return; }
-
-  // 2. INBOUND ophalen
-  const inboundUrl = `${CONFIG.baseUrl}/peppol/inbound-documents?supplierId=${CONFIG.inboundSupplierId}&page[size]=100`;
-  let inboundDocs = [];
-  try {
-      const inboundRes = await apiClient.get(inboundUrl, {
-          headers: { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.api+json" }
-      });
-      inboundDocs = inboundRes.data.data || [];
-  } catch (error) {
-      handleAxiosError(error, "Ophalen Inbound Documenten");
-      // We gaan door, maar matchen zal falen
-  }
-
-  // 3. MATCHEN & PRINTEN
-  console.log("================ RESULTATEN ===================\n");
-
-  for (const outDoc of latest10Outbound) {
-      const transId = outDoc.attributes.transmissionId;
-      const match = inboundDocs.find(inDoc => inDoc.attributes.transmissionId === transId);
-      const outName = await getSupplierName(token, CONFIG.outboundSupplierId);
-      
-      if (match) {
-          const inId = match.relationships?.supplier?.data?.id;
-          const inName = await getSupplierName(token, inId);
-          const inDocId = match.id || match.attributes.id;
-          const xmlData = await getInboundXmlData(token, inDocId);
-
-          console.log(`✅ MATCH GEVONDEN`);
-          console.log(`   Outbound supplierid    : ${CONFIG.outboundSupplierId} (${outName})`);
-          console.log(`   Outbound factuurID     : ${outDoc.id}`);
-          console.log(`   Factuurnummer (XML)    : ${xmlData.invoiceNumber}`);
-          console.log(`   Betreft (XML)          : ${xmlData.description}`);
-          console.log(`   Transmission FactuurID : ${transId}`);
-          console.log(`   Inbound Supplier       : ${inId} (${inName})`);
-          console.log(`   Inbound factuurID      : ${inDocId}`);
-          console.log(`-----------------------------------------------------------------------------------\n`);
-      } else {
-          // console.log(`   (Geen match voor Outbound ID: ${outDoc.id})`);
-      }
-  }
-  
-  console.log("(Einde verwerking)");
 }
 
 main();
