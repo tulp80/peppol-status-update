@@ -1,5 +1,6 @@
+backup/
 node_modules/
-.env
+reports/
 cert/
 *.pfx
 

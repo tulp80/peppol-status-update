@@ -18,7 +18,7 @@ const CONFIG = Object.freeze({
     clientSecret: process.env.CLIENT_SECRET,
   },
   ssl: {
-    pfxFile: process.env.PFX_FILE || 'client_fullchain_with_password.pfx',
+    pfxFile: process.env.PFX_FILE || 'cert/client_fullchain_with_password.pfx',
     passphrase: process.env.SSL_PASSPHRASE,
   },
   suppliers: {
