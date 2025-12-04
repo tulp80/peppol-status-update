@@ -35,13 +35,11 @@ const CONFIG = Object.freeze({
     pageSize: 100,
     lookbackDays: 6,
     timeout: 30000,
-    acknowledgeWaitTime: 60000,
     finalStatusWaitTime: 30000,
     outputDir: './reports',
   },
   businessStatus: {
     codes: {
-      ACKNOWLEDGED: 'acknowledged',
       ACCEPTED: 'accepted',
       REJECTED: 'rejected',
     },
@@ -272,9 +270,11 @@ const XmlParser = {
   },
 
   parseInvoiceDetails(xml) {
+    const issueDate = this.extractField(xml, 'IssueDate');
     return {
       invoiceNumber: this.extractField(xml, 'ID') || 'Niet gevonden',
       description: this.extractField(xml, 'Note') || '-',
+      issueDate: issueDate ? new Date(issueDate) : null,
     };
   },
 };
@@ -320,19 +320,16 @@ class BusinessStatusManager {
 
   async analyzeDocument(documentId) {
     const statuses = await this.api.fetchInboundBusinessStatuses(documentId);
-    const { codes, finalStatuses } = CONFIG.businessStatus;
+    const { finalStatuses } = CONFIG.businessStatus;
 
-    const hasAcknowledged = StatusResolver.hasStatus(statuses, codes.ACKNOWLEDGED);
     const hasFinalStatus = StatusResolver.hasAnyStatus(statuses, finalStatuses);
     const existingCodes = StatusResolver.getExistingStatusCodes(statuses);
 
     return {
       statuses,
-      hasAcknowledged,
       hasFinalStatus,
       existingCodes,
-      needsAcknowledge: !hasAcknowledged && !hasFinalStatus,
-      needsFinalStatus: hasAcknowledged && !hasFinalStatus,
+      needsFinalStatus: !hasFinalStatus,
       isComplete: hasFinalStatus,
     };
   }
@@ -382,26 +379,41 @@ class InvoiceReportGenerator {
     const analysis = await this.analyzeAllDocuments(matches);
     this.printAnalysis(analysis);
 
-    const needsAcknowledge = analysis.filter((a) => a.needsAcknowledge);
+    // Splits documenten op basis van datum (28 nov of later vs eerder)
+    const cutoffDate = new Date('2025-11-28T00:00:00Z');
+    const { nov28AndLater, beforeNov28 } = await this.splitByDate(matches, cutoffDate);
 
-    if (needsAcknowledge.length > 0) {
-      Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
-      const successCount = await this.sendAcknowledgedStatuses(needsAcknowledge);
-      await this.handleWaitTime(successCount, CONFIG.settings.acknowledgeWaitTime, 'acknowledged');
-    } else {
-      Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
-      Logger.info('Alle documenten hebben al acknowledged of final status. Overslaan.');
+    // Voor documenten van 28 nov en later: ga direct naar final status
+    if (nov28AndLater.length > 0) {
+      Logger.header('STAP 2: ACCEPTED/REJECTED VERSTUREN (28 NOV+)');
+      Logger.info(`${nov28AndLater.length} document(en) van 28 november of later gevonden.`);
+      
+      const nov28Analysis = analysis.filter((a) => 
+        nov28AndLater.some(m => m.inbound.id === a.documentId)
+      );
+      const needsFinalNov28 = nov28Analysis.filter((a) => a.needsFinalStatus);
+
+      if (needsFinalNov28.length > 0) {
+        const successCount = await this.sendFinalStatuses(needsFinalNov28);
+        await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
+      } else {
+        Logger.info('Alle documenten van 28 nov+ hebben al een final status. Overslaan.');
+      }
     }
+ 
+    if (beforeNov28.length > 0) {
+      Logger.header('STAP 2: ACCEPTED/REJECTED VERSTUREN (VOOR 28 NOV)');
+      const beforeNov28Analysis = analysis.filter((a) => 
+        beforeNov28.some(m => m.inbound.id === a.documentId)
+      );
+      const needsFinal = beforeNov28Analysis.filter((a) => a.needsFinalStatus);
 
-    Logger.header('STAP 3: ACCEPTED/REJECTED VERSTUREN');
-    const freshAnalysis = await this.analyzeAllDocuments(matches);
-    const needsFinal = freshAnalysis.filter((a) => a.needsFinalStatus);
-
-    if (needsFinal.length > 0) {
-      const successCount = await this.sendFinalStatuses(needsFinal);
-      await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
-    } else {
-      Logger.info('Alle documenten hebben al een final status. Overslaan.');
+      if (needsFinal.length > 0) {
+        const successCount = await this.sendFinalStatuses(needsFinal);
+        await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
+      } else {
+        Logger.info('Alle documenten hebben al een final status. Overslaan.');
+      }
     }
 
     Logger.header('EINDRESULTATEN');
@@ -466,8 +478,6 @@ class InvoiceReportGenerator {
       let action = '';
       if (item.isComplete) {
         action = '→ Compleet (geen actie nodig)';
-      } else if (item.needsAcknowledge) {
-        action = '→ Needs: acknowledged + final';
       } else if (item.needsFinalStatus) {
         action = '→ Needs: final status';
       }
@@ -505,15 +515,6 @@ class InvoiceReportGenerator {
 
     Logger.separator();
     return successCount;
-  }
-
-  async sendAcknowledgedStatuses(documents) {
-    return this.sendStatuses(
-      documents,
-      'acknowledged',
-      () => CONFIG.businessStatus.codes.ACKNOWLEDGED,
-      () => 'Acknowledged versturen:'
-    );
   }
 
   async sendFinalStatuses(documents) {
@@ -577,6 +578,29 @@ class InvoiceReportGenerator {
         outbound: outboundMap.get(inDoc.attributes.transmissionId),
         transmissionId: inDoc.attributes.transmissionId,
       }));
+  }
+
+  async splitByDate(matches, cutoffDate) {
+    const nov28AndLater = [];
+    const beforeNov28 = [];
+
+    for (const match of matches) {
+      const xmlDetails = await this.fetchXmlDetailsSafe(match.inbound.id);
+      // Gebruik issueDate uit XML als beschikbaar, anders createdAt van inbound document
+      const invoiceDate = xmlDetails.issueDate || new Date(match.inbound.attributes.createdAt);
+      
+      // Vergelijk alleen de datum (zonder tijd)
+      const invoiceDateOnly = new Date(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate());
+      const cutoffDateOnly = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), cutoffDate.getDate());
+
+      if (invoiceDateOnly >= cutoffDateOnly) {
+        nov28AndLater.push(match);
+      } else {
+        beforeNov28.push(match);
+      }
+    }
+
+    return { nov28AndLater, beforeNov28 };
   }
 
   async printFinalResults(matches) {
@@ -683,11 +707,6 @@ class InvoiceReportGenerator {
   formatActions(processResult) {
     const actions = [];
 
-    if (processResult.acknowledged) {
-      const ack = processResult.acknowledged;
-      actions.push(ack.success ? 'acknowledged ✅' : `acknowledged ❌ (${ack.error})`);
-    }
-
     if (processResult.final) {
       const fin = processResult.final;
       const emoji = fin.statusCode === 'accepted' ? '👍' : '👎';
@@ -702,7 +721,7 @@ class InvoiceReportGenerator {
       const xml = await this.api.fetchDocumentXml(docId);
       return XmlParser.parseInvoiceDetails(xml);
     } catch {
-      return { invoiceNumber: 'Error', description: 'Error' };
+      return { invoiceNumber: 'Error', description: 'Error', issueDate: null };
     }
   }
 

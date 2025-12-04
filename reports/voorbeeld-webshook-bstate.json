@@ -1,0 +1,23 @@
+{
+  "data": {
+    "type": "eInvoicing.outbound.document.business.status.new",
+    "attributes": {
+      "createdAt": "2025-11-27T14:44:23.667043526Z"
+    },
+    "relationships": {
+      "supplier": {
+        "data": {
+          "id": "ef111c85-4315-4cde-bed9-efd29f25e19c",
+          "type": "supplier"
+        }
+      },
+      "document": {
+        "data": {
+          "id": "dceaea68-371f-40ad-9e3f-3ad9952a9c28",
+          "type": "peppolInvoice"
+        }
+      }
+    },
+    "id": "c1ed49c1-30bb-439c-b748-42c33f1c46ce"
+  }
+}

@@ -5,7 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "state": "node state.js",
+    "state2": "node state2.js",
+    "state3": "node state3.js"
   },
   "dependencies": {
     "axios": "^1.13.2",

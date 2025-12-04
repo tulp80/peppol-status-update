@@ -1,0 +1,11 @@
+# Cursor Rules
+
+## Git Update Rules
+- NEVER delete files/directories when handling git updates
+- Preserve all existing files when staging/committing
+- Use .gitignore to exclude files, never delete them
+
+## MCP Server Configuration
+- ONLY enable: user-exa, fetch
+- Disable all other MCP servers for this project
+

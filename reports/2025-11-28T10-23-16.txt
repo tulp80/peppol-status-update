@@ -1,0 +1,579 @@
+Factuurnummer (BIS 3.0)         : 426
+Betreft (BIS 3.0)               : Test 3 - XYZ Test Peppol B.V.
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : dceaea68-371f-40ad-9e3f-3ad9952a9c28
+Outbound Created DateTime      : 2025-11-27T13:33:19.134Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 013d3c59-313f-4805-a9e6-992d75ec90b9
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : d849a4e6-ac53-483e-b0f1-1e0a69e93e37
+Inbound Created DateTime       : 2025-11-27T13:33:20.084Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 428
+Betreft (BIS 3.0)               : test
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 2915c23c-55cc-4563-a563-b6d0158f8c22
+Outbound Created DateTime      : 2025-11-27T13:33:14.551Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 2eb14a67-e16a-4784-940f-f7a75fd260f2
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 2b8bfa38-d1ec-4713-a80f-a6a999cfb1ac
+Inbound Created DateTime       : 2025-11-27T13:33:15.600Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 429
+Betreft (BIS 3.0)               : test
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 5ef22e59-5e67-4bf3-8043-158842631942
+Outbound Created DateTime      : 2025-11-27T13:33:12.353Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : a6b6a90b-940b-44ec-b9c7-bfdb2b5339e0
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 1b9fa1bb-c3ea-4498-8f37-ffda0b474d9e
+Inbound Created DateTime       : 2025-11-27T13:33:13.229Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 430
+Betreft (BIS 3.0)               : test
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 53de381f-2643-49b3-8e57-c43713e965d1
+Outbound Created DateTime      : 2025-11-27T13:33:10.136Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 8c470775-16dd-4179-bbf7-2b60f769192e
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : eeb5a974-b8d4-4f12-b3c9-d964b804f6ab
+Inbound Created DateTime       : 2025-11-27T13:33:11.092Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 431
+Betreft (BIS 3.0)               : Test 881994
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 8ca44a24-737c-49c3-9f89-71fe0bbb47a4
+Outbound Created DateTime      : 2025-11-27T15:11:25.221Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : a31d4f93-3700-4593-b3d4-2b66fffbf747
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 4a2d4cb4-41b1-4ef4-a284-d642c2ff7b6a
+Inbound Created DateTime       : 2025-11-27T15:11:26.127Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 431
+Betreft (BIS 3.0)               : Test 881994
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 38db3e7b-f76d-44d9-bb79-8598027286d0
+Outbound Created DateTime      : 2025-11-27T15:12:44.409Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : 8e20c289-dab3-448d-b6c8-2ae50d6342fe
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 2958bddb-9aa9-450b-85b4-9338caa81628
+Inbound Created DateTime       : 2025-11-27T15:12:45.529Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 432
+Betreft (BIS 3.0)               : Test 135675
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 49d77f5e-10e2-4abc-8cc7-8811e6dcd2e8
+Outbound Created DateTime      : 2025-11-27T15:11:23.105Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : 6def8ae1-352f-40a4-9f72-459a2915bfcb
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 42271c22-5442-4b65-9ebc-afa6dce60cb1
+Inbound Created DateTime       : 2025-11-27T15:11:24.807Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 432
+Betreft (BIS 3.0)               : Test 135675
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 052ad21e-d1de-4af7-a02f-7fb11f742f7f
+Outbound Created DateTime      : 2025-11-27T15:12:42.179Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : 519db2a8-f121-41a7-b143-d23e7d9e47b1
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 03c86213-aff7-4abe-8238-87769d8f7316
+Inbound Created DateTime       : 2025-11-27T15:12:43.206Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 433
+Betreft (BIS 3.0)               : Test 815029
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 9a241114-54b6-457f-a925-9fb5cfeee786
+Outbound Created DateTime      : 2025-11-27T15:11:20.929Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : 989aca8d-f62f-4797-8c03-385b7cfc92c0
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : d232d5b4-d014-46c2-a67c-ef5657356d06
+Inbound Created DateTime       : 2025-11-27T15:11:22.323Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 433
+Betreft (BIS 3.0)               : Test 815029
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : ba4c9ea8-84e1-4299-93b2-a19d316736e3
+Outbound Created DateTime      : 2025-11-27T15:12:39.833Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : ba2e497f-9693-43d2-9258-70bf0f957ad6
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 610b7290-a869-458b-9972-5313d71fd7d6
+Inbound Created DateTime       : 2025-11-27T15:12:40.677Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 433
+Betreft (BIS 3.0)               : Test 815029
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 415d1806-74f8-4162-b96a-fa8fdea0dbc7
+Outbound Created DateTime      : 2025-11-27T15:55:13.521Z
+Outbound technical-state       : accepted
+Outbound business-state        : -
+
+Transmission FactuurID         : fe64a4c4-5262-45c0-8bf9-dc170e308de0
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : c868c933-b291-4e97-b92f-ec826d9f09d2
+Inbound Created DateTime       : 2025-11-27T15:55:14.609Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 434
+Betreft (BIS 3.0)               : Test 686656
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 64dd062b-fc9a-4266-a751-95ec700f01ad
+Outbound Created DateTime      : 2025-11-27T15:56:25.874Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 91afaa97-3e63-4d70-aae6-e4ac21768f87
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 5be2c4c5-1635-4873-820e-6ff7701456a0
+Inbound Created DateTime       : 2025-11-27T15:56:26.703Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 435
+Betreft (BIS 3.0)               : Test 814063
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 63757412-9f82-4903-a8b7-388f80b88ad3
+Outbound Created DateTime      : 2025-11-27T15:56:23.582Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 09c84c2e-ebad-45dd-b10a-35e03d6bfad4
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 2d7212db-6145-4baa-97a5-246344645239
+Inbound Created DateTime       : 2025-11-27T15:56:24.423Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 436
+Betreft (BIS 3.0)               : Test 295245
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 2941ccad-1af8-4e07-a73a-1a61822edfa6
+Outbound Created DateTime      : 2025-11-27T15:56:21.290Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 699c509f-160a-45a4-9266-3a3808d61a45
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 8b5365b8-e1d4-4c7f-85cb-d791ab25ecea
+Inbound Created DateTime       : 2025-11-27T15:56:22.186Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 437
+Betreft (BIS 3.0)               : Test 650121
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 92a2dac7-451b-4137-992b-d8516a0edee3
+Outbound Created DateTime      : 2025-11-27T15:56:19.147Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : f3951a94-2716-4afa-b492-575482bf78f7
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 550e8bdb-74b4-4fce-a1b0-dbc0b604fe8c
+Inbound Created DateTime       : 2025-11-27T15:56:19.937Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 438
+Betreft (BIS 3.0)               : Test 509058
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : d1c8b4d2-5119-4185-a818-efa666d890a4
+Outbound Created DateTime      : 2025-11-27T15:56:16.911Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : b5a758df-b367-4adc-8c7b-26611a548e89
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : a05ce5e4-cdbb-4748-b2d8-5aa1972fdd92
+Inbound Created DateTime       : 2025-11-27T15:56:17.829Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 439
+Betreft (BIS 3.0)               : Test 900459
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 41a0b280-52dd-4c21-85b5-dc50070b4cff
+Outbound Created DateTime      : 2025-11-27T15:56:14.808Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 3be9eff5-5553-49ac-bd26-b273f527551e
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 11d8093b-a542-4f66-99d9-35a6cd04d0e8
+Inbound Created DateTime       : 2025-11-27T15:56:15.583Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 440
+Betreft (BIS 3.0)               : Test 436042
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : ae0e7246-b8cf-46a6-8afa-a67babf59782
+Outbound Created DateTime      : 2025-11-27T15:56:12.723Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 4a32bb3d-a146-4bce-802a-ff981aeb5e3e
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 8ace50f4-333f-43f4-8db3-7db3b5b9c11c
+Inbound Created DateTime       : 2025-11-27T15:56:13.744Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 441
+Betreft (BIS 3.0)               : Test 186384
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : b582a095-f1ba-4f4c-bbe8-35639f9258ed
+Outbound Created DateTime      : 2025-11-27T15:56:10.440Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 5b7d6f0b-666e-4b97-b3b8-87b0fbb2ffa6
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : c9da2a3d-1fa7-4578-a9fd-b1212f0dc417
+Inbound Created DateTime       : 2025-11-27T15:56:11.316Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 442
+Betreft (BIS 3.0)               : Test 460515
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 5c2f0c7e-3ddb-4b75-bde0-83a5203a08d7
+Outbound Created DateTime      : 2025-11-27T15:56:08.331Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : a770b602-a544-40eb-9674-7277019d86f4
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 2c27bb74-fd2e-47ef-863a-a0f3eeb5722b
+Inbound Created DateTime       : 2025-11-27T15:56:09.145Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 443
+Betreft (BIS 3.0)               : Test 200279
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 55025f3d-52c5-4465-8d8e-a69fa1aee93d
+Outbound Created DateTime      : 2025-11-27T15:56:06.128Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 19894096-22a0-4f16-841e-b2a2b90f44f9
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 410bdc56-040c-4125-842d-f93a7cd719d8
+Inbound Created DateTime       : 2025-11-27T15:56:07.104Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 444
+Betreft (BIS 3.0)               : Test 296831
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 04d3c388-de99-4014-a229-f305dbb27f99
+Outbound Created DateTime      : 2025-11-27T15:56:03.806Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : a35eecdc-15fb-406e-9f38-5dc79c9ec100
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : efa4fb58-951b-4640-80f4-fa1c8c8ff8c9
+Inbound Created DateTime       : 2025-11-27T15:56:04.844Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 446
+Betreft (BIS 3.0)               : Test 905276
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : a0c0ed67-630d-4539-bc37-82dfbbc19eec
+Outbound Created DateTime      : 2025-11-28T06:48:49.197Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 20e154b9-c5f9-4708-831c-8842a335502b
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 161a7042-bfc1-451d-b540-e5e8fddb1aa8
+Inbound Created DateTime       : 2025-11-28T06:48:50.418Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 447
+Betreft (BIS 3.0)               : Test 760584
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 5912155e-7217-4e55-9d43-f3666a70f2a9
+Outbound Created DateTime      : 2025-11-28T06:56:40.222Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 9e53d1fa-289d-4483-a6e5-410e60c51750
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : b6d0c896-1ec7-4817-b826-36bb663da1ab
+Inbound Created DateTime       : 2025-11-28T06:56:41.474Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 448
+Betreft (BIS 3.0)               : Test 430121
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : ba2e43f5-994e-4b2e-9e62-b2006f6099c2
+Outbound Created DateTime      : 2025-11-28T07:16:29.699Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 6bbc886b-f15b-4ffa-9d48-9a1d686ab141
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : ec99ec87-a77a-4716-a584-238512650bd2
+Inbound Created DateTime       : 2025-11-28T07:16:30.529Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 449
+Betreft (BIS 3.0)               : Test 234534
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : a7b2287f-7746-47e7-af44-c07fa50984d0
+Outbound Created DateTime      : 2025-11-28T07:16:27.349Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : c8bbddc9-4d32-44d9-af07-64d51dabdd5d
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : a240b8d4-2f05-4c10-8aa1-a2a73fab916b
+Inbound Created DateTime       : 2025-11-28T07:16:28.687Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 450
+Betreft (BIS 3.0)               : Test 348496
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 4361ac63-bd2f-42b5-8140-3676f3efa1fb
+Outbound Created DateTime      : 2025-11-28T07:16:25.277Z
+Outbound technical-state       : accepted
+Outbound business-state        : accepted
+
+Transmission FactuurID         : 532e82b5-1694-4695-a9f5-86e99b28f92d
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : eab9071f-4432-44b5-b77e-c5d1ab8952fc
+Inbound Created DateTime       : 2025-11-28T07:16:26.115Z
+IMR technical-state            : accepted
+IMR business-state             : accepted
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 451
+Betreft (BIS 3.0)               : Test 972414
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 54208aee-f983-4dc3-9249-1c7e2ff7ebd1
+Outbound Created DateTime      : 2025-11-28T07:16:23.145Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 9c93caf8-ef8f-4263-af13-ae7a86b95dd3
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : 113ae055-c0a7-4b1d-a4ad-322b0344e490
+Inbound Created DateTime       : 2025-11-28T07:16:24.028Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
+
+Factuurnummer (BIS 3.0)         : 452
+Betreft (BIS 3.0)               : Test 295075
+
+Outbound Supplier name         : ABC Test Peppol B.V. (Administratie Tenant: 035058)
+Outbound Supplier ID           : ef111c85-4315-4cde-bed9-efd29f25e19c
+Outbound FactuurID             : 3717ab14-99bb-4ce7-8492-ddb3fa010342
+Outbound Created DateTime      : 2025-11-28T07:16:21.030Z
+Outbound technical-state       : accepted
+Outbound business-state        : rejected
+
+Transmission FactuurID         : 7ed27614-0218-438c-a45a-7a8c037f6b93
+
+Inbound Supplier name          : XYZ Test Peppol B.V. (Administratie Tenant: 034946)
+Inbound Supplier ID            : 330a0188-1cda-4596-9715-23ddb4c33771
+Inbound FactuurID              : e9d1ea3d-c1d0-4125-95e9-416f124f3252
+Inbound Created DateTime       : 2025-11-28T07:16:21.940Z
+IMR technical-state            : accepted
+IMR business-state             : rejected
+--------------------------------------------------------------------------------
