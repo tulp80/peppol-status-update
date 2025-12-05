@@ -126,13 +126,16 @@ class ReportFileWriter {
 
 function createHttpClient() {
   const { pfxFile, passphrase } = CONFIG.ssl;
+  
+  // Resolve path to cert directory
+  const certPath = path.resolve('cert', pfxFile);
 
-  if (!fs.existsSync(pfxFile)) {
-    throw new Error(`SSL certificate not found: ${pfxFile}`);
+  if (!fs.existsSync(certPath)) {
+    throw new Error(`SSL certificate not found: ${certPath}`);
   }
 
   const httpsAgent = new https.Agent({
-    pfx: fs.readFileSync(path.resolve(pfxFile)),
+    pfx: fs.readFileSync(certPath),
     passphrase,
     rejectUnauthorized: false,
   });

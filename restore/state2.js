@@ -8,8 +8,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from project root
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// Load .env from project root (one level up from restore/)
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 // ============================================================================
 // CONFIGURATION
@@ -42,13 +42,11 @@ const CONFIG = Object.freeze({
     pageSize: 100,
     lookbackDays: 6,
     timeout: 30000,
-    acknowledgeWaitTime: 60000,
     finalStatusWaitTime: 30000,
     outputDir: './reports',
   },
   businessStatus: {
     codes: {
-      ACKNOWLEDGED: 'acknowledged',
       ACCEPTED: 'accepted',
       REJECTED: 'rejected',
     },
@@ -136,8 +134,8 @@ class ReportFileWriter {
 function createHttpClient() {
   const { pfxFile, passphrase } = CONFIG.ssl;
 
-  // Resolve path to cert directory
-  const certPath = path.resolve(__dirname, 'cert', pfxFile);
+  // Resolve path to cert directory (go up one level from restore/ to project root)
+  const certPath = path.resolve(__dirname, '..', 'cert', pfxFile);
 
   if (!fs.existsSync(certPath)) {
     throw new Error(`SSL certificate not found: ${certPath}`);
@@ -332,19 +330,16 @@ class BusinessStatusManager {
 
   async analyzeDocument(documentId) {
     const statuses = await this.api.fetchInboundBusinessStatuses(documentId);
-    const { codes, finalStatuses } = CONFIG.businessStatus;
+    const { finalStatuses } = CONFIG.businessStatus;
 
-    const hasAcknowledged = StatusResolver.hasStatus(statuses, codes.ACKNOWLEDGED);
     const hasFinalStatus = StatusResolver.hasAnyStatus(statuses, finalStatuses);
     const existingCodes = StatusResolver.getExistingStatusCodes(statuses);
 
     return {
       statuses,
-      hasAcknowledged,
       hasFinalStatus,
       existingCodes,
-      needsAcknowledge: !hasAcknowledged && !hasFinalStatus,
-      needsFinalStatus: hasAcknowledged && !hasFinalStatus,
+      needsFinalStatus: !hasFinalStatus,
       isComplete: hasFinalStatus,
     };
   }
@@ -394,26 +389,41 @@ class InvoiceReportGenerator {
     const analysis = await this.analyzeAllDocuments(matches);
     this.printAnalysis(analysis);
 
-    const needsAcknowledge = analysis.filter((a) => a.needsAcknowledge);
+    // Splits documenten op basis van datum (28 nov of later vs eerder)
+    const cutoffDate = new Date('2025-11-28T00:00:00Z');
+    const { nov28AndLater, beforeNov28 } = await this.splitByDate(matches, cutoffDate);
 
-    if (needsAcknowledge.length > 0) {
-      Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
-      const successCount = await this.sendAcknowledgedStatuses(needsAcknowledge);
-      await this.handleWaitTime(successCount, CONFIG.settings.acknowledgeWaitTime, 'acknowledged');
-    } else {
-      Logger.header('STAP 2: ACKNOWLEDGED VERSTUREN');
-      Logger.info('Alle documenten hebben al acknowledged of final status. Overslaan.');
+    // Voor documenten van 28 nov en later: ga direct naar final status
+    if (nov28AndLater.length > 0) {
+      Logger.header('STAP 2: ACCEPTED/REJECTED VERSTUREN (28 NOV+)');
+      Logger.info(`${nov28AndLater.length} document(en) van 28 november of later gevonden.`);
+      
+      const nov28Analysis = analysis.filter((a) => 
+        nov28AndLater.some(m => m.inbound.id === a.documentId)
+      );
+      const needsFinalNov28 = nov28Analysis.filter((a) => a.needsFinalStatus);
+
+      if (needsFinalNov28.length > 0) {
+        const successCount = await this.sendFinalStatuses(needsFinalNov28);
+        await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
+      } else {
+        Logger.info('Alle documenten van 28 nov+ hebben al een final status. Overslaan.');
+      }
     }
+ 
+    if (beforeNov28.length > 0) {
+      Logger.header('STAP 2: ACCEPTED/REJECTED VERSTUREN (VOOR 28 NOV)');
+      const beforeNov28Analysis = analysis.filter((a) => 
+        beforeNov28.some(m => m.inbound.id === a.documentId)
+      );
+      const needsFinal = beforeNov28Analysis.filter((a) => a.needsFinalStatus);
 
-    Logger.header('STAP 3: ACCEPTED/REJECTED VERSTUREN');
-    const freshAnalysis = await this.analyzeAllDocuments(matches);
-    const needsFinal = freshAnalysis.filter((a) => a.needsFinalStatus);
-
-    if (needsFinal.length > 0) {
-      const successCount = await this.sendFinalStatuses(needsFinal);
-      await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
-    } else {
-      Logger.info('Alle documenten hebben al een final status. Overslaan.');
+      if (needsFinal.length > 0) {
+        const successCount = await this.sendFinalStatuses(needsFinal);
+        await this.handleWaitTime(successCount, CONFIG.settings.finalStatusWaitTime, 'final status');
+      } else {
+        Logger.info('Alle documenten hebben al een final status. Overslaan.');
+      }
     }
 
     Logger.header('EINDRESULTATEN');
@@ -432,42 +442,13 @@ class InvoiceReportGenerator {
       return [];
     }
     Logger.success(`${inboundDocs.length} inbound document(en) gevonden.`);
-    
-    // Debug: toon alle inbound transmissionIds
-    Logger.info('Alle inbound transmissionIds:');
-    inboundDocs.forEach((doc, idx) => {
-      const transId = doc.attributes?.transmissionId || 'GEEN';
-      Logger.info(`  ${idx + 1}. ${doc.id} → transmissionId: ${transId}`);
-    });
-    Logger.blank();
 
     Logger.info('Outbound documenten ophalen...');
     const outboundMap = await this.buildOutboundMap();
-    Logger.info(`${outboundMap.size} outbound document(en) gevonden.`);
-    
-    // Debug: toon alle outbound transmissionIds
-    if (outboundMap.size > 0) {
-      Logger.info('Alle outbound transmissionIds:');
-      let count = 0;
-      for (const [transId, doc] of outboundMap.entries()) {
-        count++;
-        Logger.info(`  ${count}. ${doc.id} → transmissionId: ${transId}`);
-      }
-      Logger.blank();
-    } else {
-      Logger.warning('Geen outbound documenten gevonden in de lookback periode.');
-      Logger.blank();
-    }
-    
     const matches = this.findMatches(inboundDocs, outboundMap);
 
     if (!matches.length) {
       Logger.error('Geen matches gevonden.');
-      Logger.info('Mogelijke oorzaken:');
-      Logger.info('  - Inbound documenten hebben geen transmissionId');
-      Logger.info('  - Outbound documenten hebben geen transmissionId');
-      Logger.info('  - TransmissionIds komen niet overeen');
-      Logger.info('  - Outbound documenten zijn ouder dan lookbackDays (' + CONFIG.settings.lookbackDays + ' dagen)');
       return [];
     }
     Logger.success(`${matches.length} match(es) gevonden.`);
@@ -507,8 +488,6 @@ class InvoiceReportGenerator {
       let action = '';
       if (item.isComplete) {
         action = '→ Compleet (geen actie nodig)';
-      } else if (item.needsAcknowledge) {
-        action = '→ Needs: acknowledged + final';
       } else if (item.needsFinalStatus) {
         action = '→ Needs: final status';
       }
@@ -546,15 +525,6 @@ class InvoiceReportGenerator {
 
     Logger.separator();
     return successCount;
-  }
-
-  async sendAcknowledgedStatuses(documents) {
-    return this.sendStatuses(
-      documents,
-      'acknowledged',
-      () => CONFIG.businessStatus.codes.ACKNOWLEDGED,
-      () => 'Acknowledged versturen:'
-    );
   }
 
   async sendFinalStatuses(documents) {
@@ -746,11 +716,6 @@ class InvoiceReportGenerator {
 
   formatActions(processResult) {
     const actions = [];
-
-    if (processResult.acknowledged) {
-      const ack = processResult.acknowledged;
-      actions.push(ack.success ? 'acknowledged ✅' : `acknowledged ❌ (${ack.error})`);
-    }
 
     if (processResult.final) {
       const fin = processResult.final;

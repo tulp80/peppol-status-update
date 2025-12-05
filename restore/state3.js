@@ -48,16 +48,13 @@ const Logger = {
 
 function createHttpClient() {
   const { pfxFile, passphrase } = CONFIG.ssl;
-  
-  // Resolve path to cert directory
-  const certPath = path.resolve('cert', pfxFile);
 
-  if (!fs.existsSync(certPath)) {
-    throw new Error(`SSL certificate not found: ${certPath}`);
+  if (!fs.existsSync(pfxFile)) {
+    throw new Error(`SSL certificate not found: ${pfxFile}`);
   }
 
   const httpsAgent = new https.Agent({
-    pfx: fs.readFileSync(certPath),
+    pfx: fs.readFileSync(path.resolve(pfxFile)),
     passphrase,
     rejectUnauthorized: false,
   });

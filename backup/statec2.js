@@ -1,15 +1,8 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load .env from project root
-dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // ============================================================================
 // CONFIGURATION
@@ -135,9 +128,9 @@ class ReportFileWriter {
 
 function createHttpClient() {
   const { pfxFile, passphrase } = CONFIG.ssl;
-
+  
   // Resolve path to cert directory
-  const certPath = path.resolve(__dirname, 'cert', pfxFile);
+  const certPath = path.resolve('cert', pfxFile);
 
   if (!fs.existsSync(certPath)) {
     throw new Error(`SSL certificate not found: ${certPath}`);
@@ -282,11 +275,9 @@ const XmlParser = {
   },
 
   parseInvoiceDetails(xml) {
-    const issueDate = this.extractField(xml, 'IssueDate');
     return {
       invoiceNumber: this.extractField(xml, 'ID') || 'Niet gevonden',
       description: this.extractField(xml, 'Note') || '-',
-      issueDate: issueDate ? new Date(issueDate) : null,
     };
   },
 };
@@ -432,42 +423,13 @@ class InvoiceReportGenerator {
       return [];
     }
     Logger.success(`${inboundDocs.length} inbound document(en) gevonden.`);
-    
-    // Debug: toon alle inbound transmissionIds
-    Logger.info('Alle inbound transmissionIds:');
-    inboundDocs.forEach((doc, idx) => {
-      const transId = doc.attributes?.transmissionId || 'GEEN';
-      Logger.info(`  ${idx + 1}. ${doc.id} → transmissionId: ${transId}`);
-    });
-    Logger.blank();
 
     Logger.info('Outbound documenten ophalen...');
     const outboundMap = await this.buildOutboundMap();
-    Logger.info(`${outboundMap.size} outbound document(en) gevonden.`);
-    
-    // Debug: toon alle outbound transmissionIds
-    if (outboundMap.size > 0) {
-      Logger.info('Alle outbound transmissionIds:');
-      let count = 0;
-      for (const [transId, doc] of outboundMap.entries()) {
-        count++;
-        Logger.info(`  ${count}. ${doc.id} → transmissionId: ${transId}`);
-      }
-      Logger.blank();
-    } else {
-      Logger.warning('Geen outbound documenten gevonden in de lookback periode.');
-      Logger.blank();
-    }
-    
     const matches = this.findMatches(inboundDocs, outboundMap);
 
     if (!matches.length) {
       Logger.error('Geen matches gevonden.');
-      Logger.info('Mogelijke oorzaken:');
-      Logger.info('  - Inbound documenten hebben geen transmissionId');
-      Logger.info('  - Outbound documenten hebben geen transmissionId');
-      Logger.info('  - TransmissionIds komen niet overeen');
-      Logger.info('  - Outbound documenten zijn ouder dan lookbackDays (' + CONFIG.settings.lookbackDays + ' dagen)');
       return [];
     }
     Logger.success(`${matches.length} match(es) gevonden.`);
@@ -620,29 +582,6 @@ class InvoiceReportGenerator {
       }));
   }
 
-  async splitByDate(matches, cutoffDate) {
-    const nov28AndLater = [];
-    const beforeNov28 = [];
-
-    for (const match of matches) {
-      const xmlDetails = await this.fetchXmlDetailsSafe(match.inbound.id);
-      // Gebruik issueDate uit XML als beschikbaar, anders createdAt van inbound document
-      const invoiceDate = xmlDetails.issueDate || new Date(match.inbound.attributes.createdAt);
-      
-      // Vergelijk alleen de datum (zonder tijd)
-      const invoiceDateOnly = new Date(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate());
-      const cutoffDateOnly = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), cutoffDate.getDate());
-
-      if (invoiceDateOnly >= cutoffDateOnly) {
-        nov28AndLater.push(match);
-      } else {
-        beforeNov28.push(match);
-      }
-    }
-
-    return { nov28AndLater, beforeNov28 };
-  }
-
   async printFinalResults(matches) {
     const sortedMatches = await this.sortMatchesByInvoiceNumber(matches);
     const freshOutboundMap = await this.buildOutboundMap();
@@ -766,7 +705,7 @@ class InvoiceReportGenerator {
       const xml = await this.api.fetchDocumentXml(docId);
       return XmlParser.parseInvoiceDetails(xml);
     } catch {
-      return { invoiceNumber: 'Error', description: 'Error', issueDate: null };
+      return { invoiceNumber: 'Error', description: 'Error' };
     }
   }
 
@@ -844,35 +783,11 @@ class InvoiceReportGenerator {
 }
 
 // ============================================================================
-// VALIDATION
-// ============================================================================
-
-function validateConfig() {
-  const required = [
-    'BASE_URL',
-    'TOKEN_URL',
-    'CLIENT_ID',
-    'CLIENT_SECRET',
-    'SSL_PASSPHRASE',
-  ];
-
-  const missing = required.filter((key) => !process.env[key]);
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}\n` +
-        `Please check your .env file in the project root.`
-    );
-  }
-}
-
-// ============================================================================
 // MAIN
 // ============================================================================
 
 async function main() {
   try {
-    validateConfig();
     Logger.info('Authenticeren...');
 
     const httpClient = createHttpClient();

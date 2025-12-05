@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "Ref": {
+      "type": "http",
+      "url": "https://api.ref.tools/mcp?apiKey=ref-74b0207167adcee79c8a",
+      "enabled": false
+    },
+    "user-exa": {
+      "enabled": false
+    },
+    "fetch": {
+      "enabled": false
+    }
+  }
+}
+
